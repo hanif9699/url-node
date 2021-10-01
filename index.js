@@ -6,6 +6,7 @@ require('dotenv').config()
 const monk = require('monk')
 const { nanoid } = require('nanoid');
 const yup = require('yup')
+const path = require('path')
 let urls;
 
 const app = express()
@@ -14,8 +15,8 @@ const db = monk('badsha:password@localhost:27017/url_shortener', function (err, 
         console.error("Db is not connected", err.message);
     }
     if (db) {
-        db.addMiddleware(logger)
-        db.addMiddleware(crashReporter)
+        // db.addMiddleware(logger)
+        // db.addMiddleware(crashReporter)
 
         urls = db.get('url')
         urls.createIndex({ slug: 1 }, { unique: true })
@@ -25,26 +26,28 @@ app.use(helmet())
 app.use(morgan('tiny'))
 app.use(cors())
 app.use(express.json())
-const logger = context => next => (args, method) => {
-    console.log(method, args)
-    return next(args, method).then((res) => {
-        console.log(method + ' result', res)
-        return res
-    })
-}
+app.use('/static', express.static(path.join(__dirname,"./public/dist/static/")));
+app.use('/js', express.static(path.join(__dirname,"./public/dist/js/")));
+// const logger = context => next => (args, method) => {
+//     console.log(method, args)
+//     return next(args, method).then((res) => {
+//         console.log(method + ' result', res)
+//         return res
+//     })
+// }
 
-const crashReporter = context => next => (args, method) => {
-    return next(args, method).catch((err) => {
-        console.error('Caught an exception!', err)
-        Raven.captureException(err, {
-            extra: {
-                method,
-                args
-            }
-        })
-        throw err
-    })
-}
+// const crashReporter = context => next => (args, method) => {
+//     return next(args, method).catch((err) => {
+//         console.error('Caught an exception!', err)
+//         Raven.captureException(err, {
+//             extra: {
+//                 method,
+//                 args
+//             }
+//         })
+//         throw err
+//     })
+// }
 
 
 let schema = yup.object().shape({
@@ -52,7 +55,8 @@ let schema = yup.object().shape({
     url: yup.string().trim().url().required(),
 })
 app.get('/', (req, res, next) => {
-    res.json({ message: 'Welcome to nodejs server' })
+    console.log( path.join(__dirname, './public/dist/'))
+    res.sendFile('index.html', { root: path.join(__dirname, './public/dist/') })
 })
 
 app.get('/:id', async (req, res) => {
