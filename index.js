@@ -8,9 +8,9 @@ const { nanoid } = require('nanoid');
 const yup = require('yup')
 const path = require('path')
 let urls;
-
+const dbHost=process.env.DBHost || 'localhost'
 const app = express()
-const db = monk('badsha:password@localhost:27017/url_shortener', function (err, db) {
+const db = monk(`badsha:password@${dbHost}:27017/url_shortener`, function (err, db) {
     if (err) {
         console.error("Db is not connected", err.message);
     }
@@ -26,40 +26,22 @@ app.use(helmet())
 app.use(morgan('tiny'))
 app.use(cors())
 app.use(express.json())
-app.use('/static', express.static(path.join(__dirname,"./public/dist/static/")));
-app.use('/js', express.static(path.join(__dirname,"./public/dist/js/")));
-// const logger = context => next => (args, method) => {
-//     console.log(method, args)
-//     return next(args, method).then((res) => {
-//         console.log(method + ' result', res)
-//         return res
-//     })
-// }
+// app.use('/static', express.static(path.join(__dirname,"./public/dist/static/")));
+// app.use('/js', express.static(path.join(__dirname,"./public/dist/js/")));
 
-// const crashReporter = context => next => (args, method) => {
-//     return next(args, method).catch((err) => {
-//         console.error('Caught an exception!', err)
-//         Raven.captureException(err, {
-//             extra: {
-//                 method,
-//                 args
-//             }
-//         })
-//         throw err
-//     })
-// }
 
 
 let schema = yup.object().shape({
     slug: yup.string().trim().matches(/^[\w\-]+$/i),
     url: yup.string().trim().url().required(),
 })
-app.get('/', (req, res, next) => {
-    console.log( path.join(__dirname, './public/dist/'))
-    res.sendFile('index.html', { root: path.join(__dirname, './public/dist/') })
+app.get('/api/', (req, res, next) => {
+    // console.log( path.join(__dirname, './public/dist/'))
+    // res.sendFile('index.html', { root: path.join(__dirname, './public/dist/') })
+    res.json({message:'Hello world'})
 })
 
-app.get('/:id', async (req, res) => {
+app.get('/api/:id', async (req, res) => {
     const { id: slug } = req.params;
     try {
         const url = await urls.findOne({ slug });
@@ -72,7 +54,7 @@ app.get('/:id', async (req, res) => {
     }
 })
 
-app.post('/url', async (req, res, next) => {
+app.post('/api/url', async (req, res, next) => {
     let { slug, url } = req.body;
     try {
         await schema.validate({

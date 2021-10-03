@@ -1,0 +1,8 @@
+FROM node:14.17.0
+WORKDIR /app
+ENV DBHost=mongo
+COPY package*.json ./
+RUN npm install
+COPY . .
+EXPOSE 3123
+CMD ["node","index.js"]
